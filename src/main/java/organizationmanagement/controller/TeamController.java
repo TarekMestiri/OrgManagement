@@ -27,7 +27,7 @@ public class TeamController {
     private final OrganizationContextUtil organizationContextUtil;
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('TEAM_READ','SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_READ','SYS_ADMIN_ROOT')")
     public ResponseEntity<List<TeamDTO>> getAll() {
         List<TeamDTO> teams;
 
@@ -46,7 +46,7 @@ public class TeamController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('TEAM_CREATE','SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_CREATE','SYS_ADMIN_ROOT')")
     public ResponseEntity<TeamDTO> create(@RequestBody TeamCreateDTO teamDto) {
         if (teamDto.getDepartmentId() == null) {
             throw new IllegalArgumentException("Department ID must be provided to create a team.");
@@ -72,7 +72,7 @@ public class TeamController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('TEAM_READ','SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_READ','SYS_ADMIN_ROOT')")
     public ResponseEntity<TeamDTO> getById(@PathVariable UUID id) {
         TeamDTO team;
 
@@ -89,7 +89,7 @@ public class TeamController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('TEAM_DELETE','SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_DELETE','SYS_ADMIN_ROOT')")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         if (organizationContextUtil.isRootAdmin()) {
             teamService.delete(id);
@@ -102,7 +102,7 @@ public class TeamController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('TEAM_UPDATE','SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_UPDATE','SYS_ADMIN_ROOT')")
     public ResponseEntity<TeamDTO> update(@PathVariable UUID id, @RequestBody TeamCreateDTO teamDto) {
         if (teamDto.getDepartmentId() == null) {
             throw new IllegalArgumentException("Department ID must be provided to update a team.");
@@ -126,7 +126,7 @@ public class TeamController {
 
     // Additional endpoint to get teams by department within organization scope
     @GetMapping("/department/{departmentId}")
-    @PreAuthorize("hasAnyAuthority('TEAM_READ','SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_READ','SYS_ADMIN_ROOT')")
     public ResponseEntity<List<TeamDTO>> getTeamsByDepartment(@PathVariable UUID departmentId) {
         List<TeamDTO> teams;
 

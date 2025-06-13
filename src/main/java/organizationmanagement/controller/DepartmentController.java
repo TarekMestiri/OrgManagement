@@ -29,7 +29,7 @@ public class DepartmentController {
     private final OrganizationContextUtil organizationContextUtil;
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('DEPARTMENT_READ','SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_READ','SYS_ADMIN_ROOT')")
     public ResponseEntity<List<DepartmentDTO>> getAll() {
         List<DepartmentDTO> departments;
 
@@ -48,7 +48,7 @@ public class DepartmentController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('DEPARTMENT_CREATE','SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_CREATE','SYS_ADMIN_ROOT')")
     public ResponseEntity<DepartmentDTO> create(@RequestBody DepartmentCreateDTO deptDto) {
         DepartmentDTO createdDepartment;
 
@@ -71,7 +71,7 @@ public class DepartmentController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('DEPARTMENT_READ','SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_READ','SYS_ADMIN_ROOT')")
     public ResponseEntity<DepartmentDTO> getById(@PathVariable UUID id) {
         DepartmentDTO department;
 
@@ -94,7 +94,7 @@ public class DepartmentController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('DEPARTMENT_UPDATE','SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_UPDATE','SYS_ADMIN_ROOT')")
     public ResponseEntity<DepartmentDTO> update(@PathVariable UUID id, @RequestBody DepartmentCreateDTO deptDto) {
         DepartmentDTO updatedDepartment;
 
@@ -134,7 +134,7 @@ public class DepartmentController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('DEPARTMENT_DELETE','SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_DELETE','SYS_ADMIN_ROOT')")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         if (organizationContextUtil.isRootAdmin()) {
             service.delete(id);

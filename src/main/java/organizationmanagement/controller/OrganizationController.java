@@ -46,7 +46,7 @@ public class OrganizationController {
     }
 
     @GetMapping("/{id}/exists")
-    @PreAuthorize("hasAnyAuthority('ORGANIZATION_READ', 'SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_READ', 'SYS_ADMIN_ROOT')")
     public ResponseEntity<Boolean> exists(@PathVariable UUID id) {
         boolean exists;
 
@@ -62,7 +62,7 @@ public class OrganizationController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ORGANIZATION_READ', 'SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_READ', 'SYS_ADMIN_ROOT')")
     public ResponseEntity<Organization> getById(@PathVariable UUID id) {
         Organization organization;
 
@@ -81,7 +81,7 @@ public class OrganizationController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ORGANIZATION_UPDATE', 'SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_UPDATE', 'SYS_ADMIN_ROOT')")
     public ResponseEntity<Organization> update(@PathVariable UUID id, @RequestBody Organization organization) {
         Organization updatedOrganization;
 
@@ -100,7 +100,7 @@ public class OrganizationController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ORGANIZATION_DELETE', 'SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_DELETE', 'SYS_ADMIN_ROOT')")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         if (organizationContextUtil.isRootAdmin()) {
             organizationService.delete(id);
@@ -118,7 +118,7 @@ public class OrganizationController {
     }
 
     @GetMapping("/{id}/children")
-    @PreAuthorize("hasAnyAuthority('ORGANIZATION_READ', 'SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_READ', 'SYS_ADMIN_ROOT')")
     public ResponseEntity<ChildrenResponse> getChildren(@PathVariable UUID id) {
         // First verify access to the organization
         if (!organizationContextUtil.isRootAdmin()) {
@@ -158,7 +158,7 @@ public class OrganizationController {
     // ===== USER ASSIGNMENT ENDPOINTS =====
 
     @PostMapping("/{organizationId}/departments/{departmentId}/assign-user/{userId}")
-    @PreAuthorize("hasAnyAuthority('ORGANIZATION_UPDATE', 'SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_UPDATE', 'SYS_ADMIN_ROOT')")
     public ResponseEntity<Void> assignUserToDepartment(
             @PathVariable UUID organizationId,
             @PathVariable UUID departmentId,
@@ -186,7 +186,7 @@ public class OrganizationController {
     }
 
     @PostMapping("/{organizationId}/teams/{teamId}/assign-user/{userId}")
-    @PreAuthorize("hasAnyAuthority('ORGANIZATION_UPDATE', 'SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_UPDATE', 'SYS_ADMIN_ROOT')")
     public ResponseEntity<Void> assignUserToTeam(
             @PathVariable UUID organizationId,
             @PathVariable UUID teamId,
@@ -214,7 +214,7 @@ public class OrganizationController {
     }
 
     @DeleteMapping("/{organizationId}/departments/{departmentId}/remove-user/{userId}")
-    @PreAuthorize("hasAnyAuthority('ORGANIZATION_DELETE', 'SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_DELETE', 'SYS_ADMIN_ROOT')")
     public ResponseEntity<Void> removeUserFromDepartment(
             @PathVariable UUID organizationId,
             @PathVariable UUID departmentId,
@@ -242,7 +242,7 @@ public class OrganizationController {
     }
 
     @DeleteMapping("/{organizationId}/teams/{teamId}/remove-user/{userId}")
-    @PreAuthorize("hasAnyAuthority('ORGANIZATION_DELETE', 'SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_DELETE', 'SYS_ADMIN_ROOT')")
     public ResponseEntity<Void> removeUserFromTeam(
             @PathVariable UUID organizationId,
             @PathVariable UUID teamId,
