@@ -19,6 +19,7 @@ public class TeamService {
     private final TeamRepository teamRepository;
     private final DepartmentRepository departmentRepository;
 
+    // Existing methods (unchanged)
     public List<Team> getAll() {
         return teamRepository.findAll();
     }
@@ -72,6 +73,82 @@ public class TeamService {
         existingTeam.setDepartment(department);
 
         return teamRepository.save(existingTeam);
+    }
+
+    // NEW: Organization-scoped methods
+
+    public List<Team> getAllByOrganization(UUID organizationId) {
+        return teamRepository.findByDepartmentOrganizationId(organizationId);
+    }
+
+    public Team getByIdAndOrganization(UUID id, UUID organizationId) {
+        return teamRepository.findByIdAndDepartmentOrganizationId(id, organizationId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Team not found with id: " + id + " in organization: " + organizationId));
+    }
+
+    public void deleteByIdAndOrganization(UUID id, UUID organizationId) {
+        Team team = getByIdAndOrganization(id, organizationId);
+        teamRepository.delete(team);
+    }
+
+    public List<Team> getByDepartmentIdAndOrganization(UUID departmentId, UUID organizationId) {
+        // First verify the department belongs to the organization
+        Department department = departmentRepository.findByIdAndOrganizationId(departmentId, organizationId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Department not found with id: " + departmentId + " in organization: " + organizationId));
+
+        return teamRepository.findByDepartmentId(departmentId);
+    }
+
+    public Team createUnderDepartmentInOrganization(UUID deptId, Team team, UUID organizationId) {
+        validateTeamName(team.getName());
+
+        // Verify department belongs to the organization
+        Department department = departmentRepository.findByIdAndOrganizationId(deptId, organizationId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Department not found with id: " + deptId + " in organization: " + organizationId));
+
+        // Check for duplicate team name within the department
+        boolean exists = teamRepository.existsByNameAndDepartmentId(team.getName().trim(), deptId);
+        if (exists) {
+            throw new BadRequestException("A team with the name '" + team.getName().trim() + "' already exists in this department.");
+        }
+
+        team.setDepartment(department);
+        return teamRepository.save(team);
+    }
+
+    public Team updateInOrganization(UUID id, UUID departmentId, Team updatedTeam, UUID organizationId) {
+        validateTeamName(updatedTeam.getName());
+
+        // Verify team exists in the organization
+        Team existingTeam = getByIdAndOrganization(id, organizationId);
+
+        // Verify new department belongs to the organization
+        Department department = departmentRepository.findByIdAndOrganizationId(departmentId, organizationId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Department not found with id: " + departmentId + " in organization: " + organizationId));
+
+        // Check for duplicate team name within the new department
+        boolean exists = teamRepository.existsByNameAndDepartmentId(updatedTeam.getName().trim(), departmentId);
+        if (exists && !existingTeam.getName().equalsIgnoreCase(updatedTeam.getName().trim())) {
+            throw new BadRequestException("A team with the name '" + updatedTeam.getName().trim() + "' already exists in this department.");
+        }
+
+        existingTeam.setName(updatedTeam.getName().trim());
+        existingTeam.setDepartment(department);
+
+        return teamRepository.save(existingTeam);
+    }
+
+    // Helper method for organization validation
+    private void validateOrganizationAccess(UUID teamId, UUID organizationId) {
+        boolean exists = teamRepository.existsByIdAndDepartmentOrganizationId(teamId, organizationId);
+        if (!exists) {
+            throw new ResourceNotFoundException(
+                    "Team not found with id: " + teamId + " in organization: " + organizationId);
+        }
     }
 
     private void validateTeamName(String name) {

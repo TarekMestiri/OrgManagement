@@ -39,6 +39,25 @@ public class DepartmentService {
         return departmentRepository.findByOrganizationId(organizationId);
     }
 
+    // New method for organization-scoped access
+    public List<Department> getAllByOrganization(UUID organizationId) {
+        return departmentRepository.findByOrganizationId(organizationId);
+    }
+
+    // New method for organization-scoped access
+    public Department getByIdAndOrganization(UUID id, UUID organizationId) {
+        return departmentRepository.findByIdAndOrganizationId(id, organizationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id " + id + " in organization " + organizationId));
+    }
+
+    // New method for organization-scoped deletion
+    public void deleteByIdAndOrganization(UUID id, UUID organizationId) {
+        Department department = departmentRepository.findByIdAndOrganizationId(id, organizationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id " + id + " in organization " + organizationId));
+
+        departmentRepository.delete(department);
+    }
+
     public Department createUnderOrganization(UUID orgId, Department dept) {
         validateDepartmentName(dept.getName());
 
@@ -62,6 +81,23 @@ public class DepartmentService {
         }
 
         return departmentRepository.save(dept);
+    }
+
+    // New method for organization-scoped update
+    public Department updateInOrganization(UUID id, Department dept, UUID organizationId) {
+        validateDepartmentName(dept.getName());
+
+        Department existing = departmentRepository.findByIdAndOrganizationId(id, organizationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id " + id + " in organization " + organizationId));
+
+        // Check for duplicate names within the same organization (excluding current department)
+        boolean nameExists = departmentRepository.existsByNameAndOrganizationIdAndIdNot(dept.getName().trim(), organizationId, id);
+        if (nameExists) {
+            throw new BadRequestException("A department with the name '" + dept.getName().trim() + "' already exists in this organization.");
+        }
+
+        existing.setName(dept.getName());
+        return departmentRepository.save(existing);
     }
 
     private void validateDepartmentName(String name) {
