@@ -46,18 +46,8 @@ public class OrganizationController {
     }
 
     @GetMapping("/{id}/exists")
-    @PreAuthorize("hasAnyAuthority('PERMISSION_READ', 'SYS_ADMIN_ROOT')")
     public ResponseEntity<Boolean> exists(@PathVariable UUID id) {
-        boolean exists;
-
-        if (organizationContextUtil.isRootAdmin()) {
-            exists = organizationService.exists(id);
-        } else {
-            // For regular users, check if they can access this organization
-            UUID currentOrgId = organizationContextUtil.getCurrentOrganizationId();
-            exists = organizationService.exists(id) && id.equals(currentOrgId);
-        }
-
+        boolean exists = organizationService.exists(id);
         return ResponseEntity.ok(exists);
     }
 
@@ -118,7 +108,7 @@ public class OrganizationController {
     }
 
     @GetMapping("/{id}/children")
-    @PreAuthorize("hasAnyAuthority('PERMISSION_READ', 'SYS_ADMIN_ROOT')")
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN_ROOT')")
     public ResponseEntity<ChildrenResponse> getChildren(@PathVariable UUID id) {
         // First verify access to the organization
         if (!organizationContextUtil.isRootAdmin()) {
