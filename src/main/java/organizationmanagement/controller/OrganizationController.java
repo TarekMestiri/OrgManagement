@@ -154,6 +154,55 @@ public class OrganizationController {
         return ResponseEntity.noContent().build();
     }
 
+    // ===== SURVEY ASSIGNMENT ENDPOINTS =====
+    @PostMapping("/{organizationId}/departments/{departmentId}/assign-survey/{surveyId}")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_UPDATE', 'SYS_ADMIN_ROOT')")
+    public ResponseEntity<Void> assignSurveyToDepartment(
+            @PathVariable UUID organizationId,
+            @PathVariable UUID departmentId,
+            @PathVariable UUID surveyId) {
+
+        verifyOrganizationAccess(organizationId);
+        departmentService.assignSurveyToDepartmentInOrganization(departmentId, surveyId, organizationId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{organizationId}/teams/{teamId}/assign-survey/{surveyId}")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_UPDATE', 'SYS_ADMIN_ROOT')")
+    public ResponseEntity<Void> assignSurveyToTeam(
+            @PathVariable UUID organizationId,
+            @PathVariable UUID teamId,
+            @PathVariable UUID surveyId) {
+
+        verifyOrganizationAccess(organizationId);
+        teamService.assignSurveyToTeamInOrganization(teamId, surveyId, organizationId);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{organizationId}/departments/{departmentId}/remove-survey/{surveyId}")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_DELETE', 'SYS_ADMIN_ROOT')")
+    public ResponseEntity<Void> removeSurveyFromDepartment(
+            @PathVariable UUID organizationId,
+            @PathVariable UUID departmentId,
+            @PathVariable UUID surveyId) {
+
+        verifyOrganizationAccess(organizationId);
+        departmentService.removeSurveyFromDepartmentInOrganization(departmentId, surveyId, organizationId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{organizationId}/teams/{teamId}/remove-survey/{surveyId}")
+    @PreAuthorize("hasAnyAuthority('PERMISSION_DELETE', 'SYS_ADMIN_ROOT')")
+    public ResponseEntity<Void> removeSurveyFromTeam(
+            @PathVariable UUID organizationId,
+            @PathVariable UUID teamId,
+            @PathVariable UUID surveyId) {
+
+        verifyOrganizationAccess(organizationId);
+        teamService.removeSurveyFromTeamInOrganization(teamId, surveyId, organizationId);
+        return ResponseEntity.noContent().build();
+    }
+
     // ===== HIERARCHY ENDPOINTS =====
     @GetMapping("/{id}/children")
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN_ROOT')")

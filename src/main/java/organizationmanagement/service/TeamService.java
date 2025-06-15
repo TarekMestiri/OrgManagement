@@ -1,5 +1,6 @@
 package organizationmanagement.service;
 
+import organizationmanagement.client.SurveyServiceClient;
 import organizationmanagement.client.UserServiceClient;
 import organizationmanagement.exception.*;
 import organizationmanagement.model.Department;
@@ -23,6 +24,7 @@ public class TeamService {
     private final TeamRepository teamRepository;
     private final DepartmentRepository departmentRepository;
     private final UserServiceClient userServiceClient;
+    private final SurveyServiceClient surveyServiceClient;
 
     // Existing methods (unchanged)
     public List<Team> getAll() {
@@ -168,6 +170,7 @@ public class TeamService {
 
 
     // Organization-scoped versions (also without ServiceUnavailableException)
+
     @Transactional
     public void assignUserToTeamInOrganization(UUID teamId, UUID userId, UUID organizationId) {
         // 1. Find team and verify it exists in the organization
@@ -205,6 +208,54 @@ public class TeamService {
 
         // 3. Perform removal
         team.getUserIds().remove(userId);
+        teamRepository.save(team);
+    }
+
+    @Transactional
+    public void assignSurveyToTeamInOrganization(UUID teamId, UUID surveyId, UUID organizationId) {
+        // 1. Find team and verify it exists in the organization
+        Team team = teamRepository.findByIdAndDepartmentOrganizationId(teamId, organizationId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Team not found with id " + teamId + " in organization " + organizationId));
+
+        // 2. Verify survey exists using Feign client
+        ResponseEntity<Boolean> surveyExistsResponse = surveyServiceClient.surveyExists(surveyId);
+        if (surveyExistsResponse.getBody() == null || !surveyExistsResponse.getBody()) {
+            throw new ResourceNotFoundException("Survey not found with id: " + surveyId);
+        }
+
+        // Optional: Verify survey belongs to organization if needed
+    /*
+    ResponseEntity<Boolean> surveyInOrgResponse = surveyServiceClient.surveyExistsInOrganization(surveyId, organizationId);
+    if (surveyInOrgResponse.getBody() == null || !surveyInOrgResponse.getBody()) {
+        throw new BadRequestException("Survey does not belong to this organization");
+    }
+    */
+
+        // 3. Check for existing assignment
+        if (team.getSurveyIds().contains(surveyId)) {
+            throw new BadRequestException("Survey is already assigned to this team");
+        }
+
+        // 4. Perform assignment
+        team.getSurveyIds().add(surveyId);
+        teamRepository.save(team);
+    }
+
+    @Transactional
+    public void removeSurveyFromTeamInOrganization(UUID teamId, UUID surveyId, UUID organizationId) {
+        // 1. Find team and verify it exists in the organization
+        Team team = teamRepository.findByIdAndDepartmentOrganizationId(teamId, organizationId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Team not found with id " + teamId + " in organization " + organizationId));
+
+        // 2. Verify survey is actually assigned
+        if (!team.getSurveyIds().contains(surveyId)) {
+            throw new BadRequestException("Survey is not assigned to this team");
+        }
+
+        // 3. Perform removal
+        team.getSurveyIds().remove(surveyId);
         teamRepository.save(team);
     }
 }

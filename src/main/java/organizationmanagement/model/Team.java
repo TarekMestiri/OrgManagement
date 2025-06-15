@@ -28,4 +28,9 @@ public class Team {
     @CollectionTable(name = "team_users", joinColumns = @JoinColumn(name = "team_id"))
     @Column(name = "user_id")
     private Set<UUID> userIds = new HashSet<>();
+
+    @ElementCollection
+    @CollectionTable(name = "team_surveys", joinColumns = @JoinColumn(name = "team_id"))
+    @Column(name = "survey_id")
+    private Set<UUID> surveyIds = new HashSet<>();
 }

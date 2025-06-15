@@ -1,5 +1,6 @@
 package organizationmanagement.service;
 
+import organizationmanagement.client.SurveyServiceClient;
 import organizationmanagement.client.UserServiceClient;
 import organizationmanagement.exception.BadRequestException;
 import organizationmanagement.exception.ResourceNotFoundException;
@@ -21,6 +22,7 @@ public class DepartmentService {
     private final DepartmentRepository departmentRepository;
     private final OrganizationRepository organizationRepository;
     private final UserServiceClient userServiceClient;
+    private final SurveyServiceClient surveyServiceClient;
 
     public List<Department> getAll() {
         return departmentRepository.findAll();
@@ -97,6 +99,7 @@ public class DepartmentService {
     }
 
     // Organization-scoped versions of assignment methods
+
     public void assignUserToDepartmentInOrganization(UUID departmentId, UUID userId, UUID organizationId) {
         Department department = departmentRepository.findByIdAndOrganizationId(departmentId, organizationId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -127,6 +130,46 @@ public class DepartmentService {
         }
 
         department.getUserIds().remove(userId);
+        departmentRepository.save(department);
+    }
+    public void assignSurveyToDepartmentInOrganization(UUID departmentId, UUID surveyId, UUID organizationId) {
+        Department department = departmentRepository.findByIdAndOrganizationId(departmentId, organizationId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Department not found with id " + departmentId + " in organization " + organizationId));
+
+        // Verify survey exists using Feign client
+        ResponseEntity<Boolean> surveyExistsResponse = surveyServiceClient.surveyExists(surveyId);
+        if (surveyExistsResponse.getBody() == null || !surveyExistsResponse.getBody()) {
+            throw new ResourceNotFoundException("Survey not found with id: " + surveyId);
+        }
+
+        // Optional: Verify survey belongs to organization if needed
+    /*
+    ResponseEntity<Boolean> surveyInOrgResponse = surveyServiceClient.surveyExistsInOrganization(surveyId, organizationId);
+    if (surveyInOrgResponse.getBody() == null || !surveyInOrgResponse.getBody()) {
+        throw new BadRequestException("Survey does not belong to this organization");
+    }
+    */
+
+        // Check if survey is already assigned
+        if (department.getSurveyIds().contains(surveyId)) {
+            throw new BadRequestException("Survey is already assigned to this department");
+        }
+
+        department.getSurveyIds().add(surveyId);
+        departmentRepository.save(department);
+    }
+
+    public void removeSurveyFromDepartmentInOrganization(UUID departmentId, UUID surveyId, UUID organizationId) {
+        Department department = departmentRepository.findByIdAndOrganizationId(departmentId, organizationId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Department not found with id " + departmentId + " in organization " + organizationId));
+
+        if (!department.getSurveyIds().contains(surveyId)) {
+            throw new BadRequestException("Survey is not assigned to this department");
+        }
+
+        department.getSurveyIds().remove(surveyId);
         departmentRepository.save(department);
     }
 }
