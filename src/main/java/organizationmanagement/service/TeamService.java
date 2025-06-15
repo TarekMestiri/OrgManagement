@@ -1,23 +1,28 @@
 package organizationmanagement.service;
 
-import organizationmanagement.exception.BadRequestException;
-import organizationmanagement.exception.ResourceNotFoundException;
+import organizationmanagement.client.UserServiceClient;
+import organizationmanagement.exception.*;
 import organizationmanagement.model.Department;
 import organizationmanagement.model.Team;
 import organizationmanagement.repository.DepartmentRepository;
 import organizationmanagement.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TeamService {
 
     private final TeamRepository teamRepository;
     private final DepartmentRepository departmentRepository;
+    private final UserServiceClient userServiceClient;
 
     // Existing methods (unchanged)
     public List<Team> getAll() {
@@ -159,5 +164,47 @@ public class TeamService {
         if (trimmed.length() < 2 || trimmed.length() > 100) {
             throw new BadRequestException("Team name must be between 2 and 100 characters.");
         }
+    }
+
+
+    // Organization-scoped versions (also without ServiceUnavailableException)
+    @Transactional
+    public void assignUserToTeamInOrganization(UUID teamId, UUID userId, UUID organizationId) {
+        // 1. Find team and verify it exists in the organization
+        Team team = teamRepository.findByIdAndDepartmentOrganizationId(teamId, organizationId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Team not found with id " + teamId + " in organization " + organizationId));
+
+        // 2. Verify user exists (EXACTLY like DepartmentService)
+        ResponseEntity<Boolean> userExistsResponse = userServiceClient.userExists(userId);
+        if (userExistsResponse.getBody() == null || !userExistsResponse.getBody()) {
+            throw new ResourceNotFoundException("User not found with id: " + userId);
+        }
+
+        // 3. Check for existing assignment (EXACTLY like DepartmentService)
+        if (team.getUserIds().contains(userId)) {
+            throw new BadRequestException("User is already assigned to this team");
+        }
+
+        // 4. Perform assignment (EXACTLY like DepartmentService)
+        team.getUserIds().add(userId);
+        teamRepository.save(team);
+    }
+
+    @Transactional
+    public void removeUserFromTeamInOrganization(UUID teamId, UUID userId, UUID organizationId) {
+        // 1. Find team and verify it exists in the organization
+        Team team = teamRepository.findByIdAndDepartmentOrganizationId(teamId, organizationId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Team not found with id " + teamId + " in organization " + organizationId));
+
+        // 2. Verify user is actually assigned
+        if (!team.getUserIds().contains(userId)) {
+            throw new BadRequestException("User is not assigned to this team");
+        }
+
+        // 3. Perform removal
+        team.getUserIds().remove(userId);
+        teamRepository.save(team);
     }
 }

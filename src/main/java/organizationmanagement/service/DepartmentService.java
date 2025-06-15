@@ -1,5 +1,6 @@
 package organizationmanagement.service;
 
+import organizationmanagement.client.UserServiceClient;
 import organizationmanagement.exception.BadRequestException;
 import organizationmanagement.exception.ResourceNotFoundException;
 import organizationmanagement.model.Department;
@@ -7,6 +8,7 @@ import organizationmanagement.model.Organization;
 import organizationmanagement.repository.DepartmentRepository;
 import organizationmanagement.repository.OrganizationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,6 +20,7 @@ public class DepartmentService {
 
     private final DepartmentRepository departmentRepository;
     private final OrganizationRepository organizationRepository;
+    private final UserServiceClient userServiceClient;
 
     public List<Department> getAll() {
         return departmentRepository.findAll();
@@ -83,23 +86,6 @@ public class DepartmentService {
         return departmentRepository.save(dept);
     }
 
-    // New method for organization-scoped update
-    public Department updateInOrganization(UUID id, Department dept, UUID organizationId) {
-        validateDepartmentName(dept.getName());
-
-        Department existing = departmentRepository.findByIdAndOrganizationId(id, organizationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id " + id + " in organization " + organizationId));
-
-        // Check for duplicate names within the same organization (excluding current department)
-        boolean nameExists = departmentRepository.existsByNameAndOrganizationIdAndIdNot(dept.getName().trim(), organizationId, id);
-        if (nameExists) {
-            throw new BadRequestException("A department with the name '" + dept.getName().trim() + "' already exists in this organization.");
-        }
-
-        existing.setName(dept.getName());
-        return departmentRepository.save(existing);
-    }
-
     private void validateDepartmentName(String name) {
         if (name == null || name.trim().isEmpty()) {
             throw new BadRequestException("Department name must not be empty.");
@@ -108,5 +94,39 @@ public class DepartmentService {
         if (trimmed.length() < 2 || trimmed.length() > 100) {
             throw new BadRequestException("Department name must be between 2 and 100 characters.");
         }
+    }
+
+    // Organization-scoped versions of assignment methods
+    public void assignUserToDepartmentInOrganization(UUID departmentId, UUID userId, UUID organizationId) {
+        Department department = departmentRepository.findByIdAndOrganizationId(departmentId, organizationId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Department not found with id " + departmentId + " in organization " + organizationId));
+
+        // Verify user exists using Feign client
+        ResponseEntity<Boolean> userExistsResponse = userServiceClient.userExists(userId);
+        if (userExistsResponse.getBody() == null || !userExistsResponse.getBody()) {
+            throw new ResourceNotFoundException("User not found with id: " + userId);
+        }
+
+        // Check if user is already assigned
+        if (department.getUserIds().contains(userId)) {
+            throw new BadRequestException("User is already assigned to this department");
+        }
+
+        department.getUserIds().add(userId);
+        departmentRepository.save(department);
+    }
+
+    public void removeUserFromDepartmentInOrganization(UUID departmentId, UUID userId, UUID organizationId) {
+        Department department = departmentRepository.findByIdAndOrganizationId(departmentId, organizationId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Department not found with id " + departmentId + " in organization " + organizationId));
+
+        if (!department.getUserIds().contains(userId)) {
+            throw new BadRequestException("User is not assigned to this department");
+        }
+
+        department.getUserIds().remove(userId);
+        departmentRepository.save(department);
     }
 }

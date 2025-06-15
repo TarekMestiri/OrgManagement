@@ -2,6 +2,8 @@ package organizationmanagement.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -21,4 +23,9 @@ public class Team {
     @ManyToOne
     @JoinColumn(name = "department_id")
     private Department department;
+
+    @ElementCollection
+    @CollectionTable(name = "team_users", joinColumns = @JoinColumn(name = "team_id"))
+    @Column(name = "user_id")
+    private Set<UUID> userIds = new HashSet<>();
 }
