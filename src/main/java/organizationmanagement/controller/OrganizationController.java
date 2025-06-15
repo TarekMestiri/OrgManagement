@@ -48,9 +48,9 @@ public class OrganizationController {
     }
 
     @GetMapping("/{id}/exists")
-    public ResponseEntity<Map<String, Boolean>> exists(@PathVariable UUID id) {
+    public ResponseEntity< Boolean> exists(@PathVariable UUID id) {
         boolean exists = organizationService.exists(id);
-        return ResponseEntity.ok(Collections.singletonMap("exists", exists));
+        return ResponseEntity.ok(exists);
     }
 
     @GetMapping("/{id}")
